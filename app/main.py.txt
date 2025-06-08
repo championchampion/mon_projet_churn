@@ -1,0 +1,47 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+import joblib
+import numpy as np
+import uvicorn
+
+# Charger le modèle
+model = joblib.load("model_xgb.joblib")
+
+# Démarrer l'app FastAPI
+app = FastAPI(title="API Prédiction Churn", version="1.0")
+
+# Définir les entrées attendues
+class ClientFeatures(BaseModel):
+    tenure: int
+    MonthlyCharges: float
+    TotalCharges: float
+    gender_Female: int
+    Partner_Yes: int
+    Dependents_Yes: int
+    PhoneService_Yes: int
+    MultipleLines_Yes: int
+    InternetService_Fiber optic: int
+    InternetService_No: int
+    OnlineSecurity_Yes: int
+    OnlineBackup_Yes: int
+    DeviceProtection_Yes: int
+    TechSupport_Yes: int
+    StreamingTV_Yes: int
+    StreamingMovies_Yes: int
+    Contract_One year: int
+    Contract_Two year: int
+    PaperlessBilling_Yes: int
+    PaymentMethod_Electronic check: int
+    PaymentMethod_Mailed check: int
+
+@app.post("/predict")
+def predict_churn(data: ClientFeatures):
+    input_data = np.array([list(data.dict().values())])
+    proba = model.predict_proba(input_data)[0][1]
+    prediction = int(proba >= 0.35)  # même seuil que dans ton notebook
+
+    return {
+        "churn_probability": round(proba, 4),
+        "prediction": prediction,
+        "interpretation": "Churn" if prediction == 1 else "No Churn"
+    }
