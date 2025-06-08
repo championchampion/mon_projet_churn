@@ -49,12 +49,22 @@ def predict_churn(data: ClientFeatures):
     proba = model.predict_proba(input_data)[0][1]
     prediction = int(proba >= 0.35)  # même seuil que dans ton notebook
 
+    # Enregistrement des prédictions dans un fichier CSV
+    log_prediction(input_data, prediction, proba)
+
     churn_proba = float(round(proba, 4))
     return {
         "churn_probability": churn_proba,
         "prediction": int(prediction),
         "interpretation": "Churn" if prediction == 1 else "No Churn"
     }
+
+def log_prediction(input_data, prediction, proba):
+    import datetime
+    import csv
+    with open("log_predictions.csv", mode="a", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([datetime.datetime.now(), *input_data[0], prediction, proba])
 
 # Lancer le serveur uniquement si le script est exécuté directement
 if __name__ == "__main__":
